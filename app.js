@@ -157,7 +157,7 @@ let screenEntities = [];
       value.position = { x, y, z };
 
       let owner = gamePlayers.find((player) => player.id === value.owner);
-      let color = owner.color;
+      let color = owner.color ?? "000000";
 
       claims.push({
         id: key,
