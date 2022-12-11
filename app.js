@@ -1,6 +1,7 @@
 let colors = ["b942f5", "5af542", "f5d742"];
 
 let gamePlayers = [];
+let gameClaims = [];
 let screenEntities = [];
 
 (async () => {
@@ -20,6 +21,7 @@ let screenEntities = [];
   setInterval(reloadMap, 1);
   setInterval(async () => {
     gamePlayers = await listOnlinePlayers();
+    gameClaims = await listClaims();
   }, 1000); // Every 5 seconds
 
   async function reloadMap() {
@@ -67,6 +69,19 @@ let screenEntities = [];
         );
         ctx.drawImage(toolTip, mousePos.x, mousePos.y);
       }
+    }
+
+    for (claim of gameClaims) {
+      // claim is {owner: 'xxx', position: '(x, y, z)', lastSeen: xxx, range: 50}
+      // Render claim as owner color circle with range as radius or grey if owner is offline
+      let claimPos = await gamePosToCanvasPos(claim.position);
+      let color = hexToRgb(claim.color);
+      color = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", 0.25)";
+      ctx.beginPath();
+      ctx.arc(claimPos.x, claimPos.y, 25, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.stroke();
     }
 
     for (entity of screenEntities) {
@@ -128,6 +143,31 @@ let screenEntities = [];
     return canvas;
   }
 
+  async function listClaims() {
+    let payload = await loadClaims();
+    let claims = [];
+
+    for (key of Object.keys(payload)) {
+      let value = payload[key];
+      let location = value.position;
+      let locationArray = location.split(",");
+      let x = parseFloat(locationArray[0].replace("(", ""));
+      let y = parseFloat(locationArray[1]);
+      let z = parseFloat(locationArray[2].replace(")", ""));
+      value.position = { x, y, z };
+
+      let owner = gamePlayers.find((player) => player.id === value.owner);
+      let color = owner.color;
+
+      claims.push({
+        id: key,
+        color: color,
+        ...value,
+      });
+    }
+    return claims;
+  }
+
   async function listOnlinePlayers() {
     let payload = await loadPlayerPos();
     let server = payload.server;
@@ -173,6 +213,10 @@ let screenEntities = [];
     return players;
   }
 
+  async function loadClaims() {
+    return (await fetch("https://rosella.pedo.gg/claimpos.json")).json();
+  }
+
   async function loadPlayerPos() {
     return (await fetch("https://rosella.pedo.gg/rustpos.json")).json();
   }
@@ -191,3 +235,14 @@ let screenEntities = [];
     return { x, y };
   }
 })();
+
+function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
