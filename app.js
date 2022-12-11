@@ -174,7 +174,7 @@ let screenEntities = [];
   }
 
   async function loadPlayerPos() {
-    return (await fetch("http://rosella.pedo.gg/rustpos.json")).json();
+    return (await fetch("https://rosella.pedo.gg/rustpos.json")).json();
   }
 
   async function gamePosToCanvasPos(pos) {
