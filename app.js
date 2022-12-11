@@ -75,7 +75,6 @@ let screenEntities = [];
         continue;
       } else {
         let pulse = createPulse(entity.frame);
-        console.log(entity);
         let pulsePos = await gamePosToCanvasPos({
           x: entity.x - 145,
           y: 0,
